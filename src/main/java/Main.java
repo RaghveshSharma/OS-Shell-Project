@@ -356,10 +356,6 @@ String command = parts.get(0);
 
            if (command.equals("jobs")) {
 
-            reapJobs(jobs);
-
-    
-
             int maxJob = -1;
 
 int secondMaxJob = -1;
@@ -407,7 +403,47 @@ else if (job.jobNumber
             marker,
             "Running",
             job.command);
+
+} else {
+
+    String doneCommand =
+            job.command;
+
+    if (doneCommand.endsWith("&")) {
+
+        doneCommand =
+                doneCommand.substring(
+                        0,
+                        doneCommand.length() - 1)
+                        .trim();
+    }
+
+    System.out.printf(
+            "[%d]%s  %-24s%s%n",
+            job.jobNumber,
+            marker,
+            "Done",
+            doneCommand);
 }
+}
+
+List<Integer> removeJobs =
+        new ArrayList<>();
+
+for (Map.Entry<Integer, Job> entry
+        : jobs.entrySet()) {
+
+    Job job = entry.getValue();
+
+    if (!job.process.isAlive()) {
+
+        removeJobs.add(job.jobNumber);
+    }
+}
+
+for (Integer id : removeJobs) {
+
+    jobs.remove(id);
 }
 
 continue;
