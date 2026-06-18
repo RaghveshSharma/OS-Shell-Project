@@ -452,6 +452,57 @@ public class Main {
                 continue;
             }
 
+            // Dual command pipeline
+
+            if (input.contains("|")) {
+
+                String[] commands = input.split("\\|", 2);
+
+                List<String> leftCommand = parseCommand(commands[0].trim());
+
+                List<String> rightCommand = parseCommand(commands[1].trim());
+
+                ProcessBuilder pb1 = new ProcessBuilder(leftCommand);
+
+                ProcessBuilder pb2 = new ProcessBuilder(rightCommand);
+
+                pb1.directory(currentDirectory.toFile());
+
+                pb2.directory(currentDirectory.toFile());
+
+                pb1.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+                pb2.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+                Process p1 = pb1.start();
+
+                Process p2 = pb2.start();
+
+                Thread pipeThread =
+                        new Thread(
+                                () -> {
+                                    try {
+
+                                        p1.getInputStream().transferTo(p2.getOutputStream());
+
+                                        p2.getOutputStream().close();
+
+                                    } catch (Exception e) {
+
+                                    }
+                                });
+
+                pipeThread.start();
+
+                p2.getInputStream().transferTo(System.out);
+
+                p1.waitFor();
+
+                p2.waitFor();
+
+                continue;
+            }
+
             // External commands
 
             String pathEnv = System.getenv("PATH");
