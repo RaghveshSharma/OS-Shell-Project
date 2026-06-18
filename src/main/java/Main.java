@@ -251,7 +251,18 @@ public class Main {
 
             String outputFile = null;
 
-            if (input.contains("1>")) {
+            String errorFile = null;
+
+            if (input.contains("2>")) {
+
+                String[] temp = input.split("2>", 2);
+
+                input = temp[0].trim();
+
+                errorFile = temp[1].trim();
+            }
+
+            else if (input.contains("1>")) {
 
                 String[] temp = input.split("1>", 2);
 
@@ -771,8 +782,8 @@ public class Main {
 
                         pb.directory(currentDirectory.toFile());
 
-                        pb.redirectError(
-                                ProcessBuilder.Redirect.INHERIT);
+
+                        // stdout
 
                         if (outputFile != null) {
 
@@ -786,7 +797,30 @@ public class Main {
 
                         else {
 
-                            pb.inheritIO();
+                            pb.redirectOutput(
+                                    ProcessBuilder.Redirect.INHERIT);
+                        }
+
+
+                        // stderr
+
+                        if (errorFile != null) {
+
+                            pb.redirectError(
+
+                                    new File(errorFile)
+
+                            );
+
+                        }
+
+                        else {
+
+                            pb.redirectError(
+
+                                    ProcessBuilder.Redirect.INHERIT
+
+                            );
                         }
 
                         Process process =
