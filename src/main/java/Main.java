@@ -253,31 +253,70 @@ public class Main {
 
             String errorFile = null;
 
+            boolean appendOutput = false;
+
             if (input.contains("2>")) {
 
-                String[] temp = input.split("2>", 2);
+                String[] temp =
+                        input.split("2>", 2);
 
-                input = temp[0].trim();
+                input =
+                        temp[0].trim();
 
-                errorFile = temp[1].trim();
+                errorFile =
+                        temp[1].trim();
+            }
+
+            else if (input.contains("1>>")) {
+
+                String[] temp =
+                        input.split("1>>", 2);
+
+                input =
+                        temp[0].trim();
+
+                outputFile =
+                        temp[1].trim();
+
+                appendOutput = true;
+            }
+
+            else if (input.contains(">>")) {
+
+                String[] temp =
+                        input.split(">>", 2);
+
+                input =
+                        temp[0].trim();
+
+                outputFile =
+                        temp[1].trim();
+
+                appendOutput = true;
             }
 
             else if (input.contains("1>")) {
 
-                String[] temp = input.split("1>", 2);
+                String[] temp =
+                        input.split("1>", 2);
 
-                input = temp[0].trim();
+                input =
+                        temp[0].trim();
 
-                outputFile = temp[1].trim();
+                outputFile =
+                        temp[1].trim();
             }
 
             else if (input.contains(">")) {
 
-                String[] temp = input.split(">", 2);
+                String[] temp =
+                        input.split(">", 2);
 
-                input = temp[0].trim();
+                input =
+                        temp[0].trim();
 
-                outputFile = temp[1].trim();
+                outputFile =
+                        temp[1].trim();
             }
 
             List<String> parts = parseCommand(input);
@@ -506,13 +545,32 @@ public class Main {
 
                 if (outputFile != null) {
 
-                    Files.writeString(
+                    if (appendOutput) {
 
-                            Paths.get(outputFile),
+                        Files.writeString(
 
-                            out.toString()
+                                Paths.get(outputFile),
 
-                    );
+                                out.toString(),
+
+                                java.nio.file.StandardOpenOption.CREATE,
+
+                                java.nio.file.StandardOpenOption.APPEND
+
+                        );
+
+                    }
+
+                    else {
+
+                        Files.writeString(
+
+                                Paths.get(outputFile),
+
+                                out.toString()
+
+                        );
+                    }
 
                 }
 
@@ -798,11 +856,30 @@ public class Main {
 
                         if (outputFile != null) {
 
-                            pb.redirectOutput(
+                            File outFile =
+                                    new File(outputFile);
 
-                                    new File(outputFile)
+                            if (appendOutput) {
 
-                            );
+                                pb.redirectOutput(
+
+                                        ProcessBuilder
+                                                .Redirect
+                                                .appendTo(outFile)
+
+                                );
+
+                            }
+
+                            else {
+
+                                pb.redirectOutput(
+
+                                        outFile
+
+                                );
+
+                            }
 
                         }
 
