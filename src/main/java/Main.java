@@ -222,6 +222,15 @@ public class Main {
                 continue;
             }
 
+            // jobs builtin
+
+            if (command.equals("jobs")) {
+
+                // Empty implementation for this stage
+
+                continue;
+            }
+
             // type builtin
 
             if (command.equals("type")) {
@@ -237,7 +246,8 @@ public class Main {
                         || cmdToCheck.equals("exit")
                         || cmdToCheck.equals("type")
                         || cmdToCheck.equals("pwd")
-                        || cmdToCheck.equals("cd")) {
+                        || cmdToCheck.equals("cd")
+                        || cmdToCheck.equals("jobs")) {
 
                     System.out.println(
                             cmdToCheck
