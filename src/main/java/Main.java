@@ -25,7 +25,7 @@ public class Main {
 
             // Split the input by spaces to separate the command from its arguments
             String[] parts = input.split(" ");
-            String command = parts;
+            String command = parts[0]; // Fixed: extract the first element of the array
 
             // Handle the echo builtin
             if (command.equals("echo")) {
