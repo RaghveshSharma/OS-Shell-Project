@@ -12,33 +12,27 @@ public class Main {
 
     static class Job {
 
-    int jobNumber;
+        int jobNumber;
 
-    long pid;
+        long pid;
 
-    String command;
+        String command;
 
-    Process process;
+        Process process;
 
-    Job(
-            int jobNumber,
-            long pid,
-            String command,
-            Process process) {
+        Job(int jobNumber, long pid, String command, Process process) {
 
-        this.jobNumber = jobNumber;
+            this.jobNumber = jobNumber;
 
-        this.pid = pid;
+            this.pid = pid;
 
-        this.command = command;
+            this.command = command;
 
-        this.process = process;
+            this.process = process;
+        }
     }
-}
 
     public static List<String> parseCommand(String input) {
-
-        
 
         List<String> parts = new ArrayList<>();
 
@@ -80,9 +74,7 @@ public class Main {
             }
 
             // Outside quotes: backslash escapes next char
-            if (ch == '\\'
-                    && !inSingleQuotes
-                    && !inDoubleQuotes) {
+            if (ch == '\\' && !inSingleQuotes && !inDoubleQuotes) {
 
                 if (i + 1 < input.length()) {
 
@@ -95,8 +87,7 @@ public class Main {
             }
 
             // Single quotes
-            if (ch == '\''
-                    && !inDoubleQuotes) {
+            if (ch == '\'' && !inDoubleQuotes) {
 
                 inSingleQuotes = !inSingleQuotes;
 
@@ -104,8 +95,7 @@ public class Main {
             }
 
             // Double quotes
-            if (ch == '"'
-                    && !inSingleQuotes) {
+            if (ch == '"' && !inSingleQuotes) {
 
                 inDoubleQuotes = !inDoubleQuotes;
 
@@ -113,9 +103,7 @@ public class Main {
             }
 
             // Space outside quotes
-            if (Character.isWhitespace(ch)
-                    && !inSingleQuotes
-                    && !inDoubleQuotes) {
+            if (Character.isWhitespace(ch) && !inSingleQuotes && !inDoubleQuotes) {
 
                 if (current.length() > 0) {
 
@@ -140,82 +128,63 @@ public class Main {
 
     public static void reapJobs(Map<Integer, Job> jobs) {
 
-    List<Integer> removeJobs =
-            new ArrayList<>();
+        List<Integer> removeJobs = new ArrayList<>();
 
-    int maxJob = -1;
+        int maxJob = -1;
 
-    int secondMaxJob = -1;
+        int secondMaxJob = -1;
 
-    for (Integer id : jobs.keySet()) {
+        for (Integer id : jobs.keySet()) {
 
-        if (id > maxJob) {
+            if (id > maxJob) {
 
-            secondMaxJob = maxJob;
+                secondMaxJob = maxJob;
 
-            maxJob = id;
+                maxJob = id;
 
+            } else if (id > secondMaxJob) {
+
+                secondMaxJob = id;
+            }
         }
 
-        else if (id > secondMaxJob) {
+        for (Map.Entry<Integer, Job> entry : jobs.entrySet()) {
 
-            secondMaxJob = id;
+            Job job = entry.getValue();
+
+            if (!job.process.isAlive()) {
+
+                String marker = " ";
+
+                if (job.jobNumber == maxJob) {
+
+                    marker = "+";
+
+                } else if (job.jobNumber == secondMaxJob) {
+
+                    marker = "-";
+                }
+
+                String doneCommand = job.command;
+
+                if (doneCommand.endsWith("&")) {
+
+                    doneCommand = doneCommand.substring(0, doneCommand.length() - 1).trim();
+                }
+
+                System.out.printf("[%d]%s  %-24s%s%n", job.jobNumber, marker, "Done", doneCommand);
+
+                removeJobs.add(job.jobNumber);
+            }
         }
-    }
 
-    for (Map.Entry<Integer, Job> entry
-            : jobs.entrySet()) {
+        for (Integer id : removeJobs) {
 
-        Job job = entry.getValue();
-
-        if (!job.process.isAlive()) {
-
-            String marker = " ";
-
-            if (job.jobNumber == maxJob) {
-
-                marker = "+";
-
-            }
-
-            else if (job.jobNumber
-                    == secondMaxJob) {
-
-                marker = "-";
-            }
-
-            String doneCommand =
-                    job.command;
-
-            if (doneCommand.endsWith("&")) {
-
-                doneCommand =
-                        doneCommand.substring(
-                                0,
-                                doneCommand.length() - 1)
-                                .trim();
-            }
-
-            System.out.printf(
-                    "[%d]%s  %-24s%s%n",
-                    job.jobNumber,
-                    marker,
-                    "Done",
-                    doneCommand);
-
-            removeJobs.add(
-                    job.jobNumber);
+            jobs.remove(id);
         }
     }
 
-    for (Integer id : removeJobs) {
-
-        jobs.remove(id);
-    }
-}
-
-    public static int getNextJobNumber(
-            Map<Integer, Job> jobs) {
+    public static int getNextJobNumber(Map<Integer, Job> jobs) {
 
         int jobNumber = 1;
 
@@ -231,12 +200,9 @@ public class Main {
 
         Scanner sc = new Scanner(System.in);
 
-        Path currentDirectory =
-                Paths.get("").toAbsolutePath().normalize();
-        
+        Path currentDirectory = Paths.get("").toAbsolutePath().normalize();
 
-Map<Integer, Job> jobs =
-        new LinkedHashMap<>();
+        Map<Integer, Job> jobs = new LinkedHashMap<>();
 
         while (true) {
 
@@ -255,27 +221,25 @@ Map<Integer, Job> jobs =
 
             List<String> parts = parseCommand(input);
 
-boolean runInBackground = false;
+            boolean runInBackground = false;
 
-if (!parts.isEmpty()
-        && parts.get(parts.size() - 1).equals("&")) {
+            if (!parts.isEmpty() && parts.get(parts.size() - 1).equals("&")) {
 
-    runInBackground = true;
+                runInBackground = true;
 
-    parts.remove(parts.size() - 1);
-}
+                parts.remove(parts.size() - 1);
+            }
 
-if (parts.isEmpty()) {
+            if (parts.isEmpty()) {
 
-    continue;
-}
+                continue;
+            }
 
-String command = parts.get(0);
+            String command = parts.get(0);
 
             // exit builtin
 
-            if (command.equals("exit")
-                    || input.trim().equals("exit 0")) {
+            if (command.equals("exit") || input.trim().equals("exit 0")) {
 
                 break;
             }
@@ -348,17 +312,13 @@ String command = parts.get(0);
 
                 newPath = newPath.normalize();
 
-                if (Files.exists(newPath)
-                        && Files.isDirectory(newPath)) {
+                if (Files.exists(newPath) && Files.isDirectory(newPath)) {
 
                     currentDirectory = newPath;
 
                 } else {
 
-                    System.out.println(
-                            "cd: "
-                                    + dir
-                                    + ": No such file or directory");
+                    System.out.println("cd: " + dir + ": No such file or directory");
                 }
 
                 continue;
@@ -366,105 +326,79 @@ String command = parts.get(0);
 
             // jobs builtin
 
-           if (command.equals("jobs")) {
+            if (command.equals("jobs")) {
 
-            int maxJob = -1;
+                int maxJob = -1;
 
-int secondMaxJob = -1;
+                int secondMaxJob = -1;
 
-for (Integer id : jobs.keySet()) {
+                for (Integer id : jobs.keySet()) {
 
-    if (id > maxJob) {
+                    if (id > maxJob) {
 
-        secondMaxJob = maxJob;
+                        secondMaxJob = maxJob;
 
-        maxJob = id;
+                        maxJob = id;
 
-    }
+                    } else if (id > secondMaxJob) {
 
-    else if (id > secondMaxJob) {
+                        secondMaxJob = id;
+                    }
+                }
 
-        secondMaxJob = id;
-    }
-}
+                for (Map.Entry<Integer, Job> entry : jobs.entrySet()) {
 
-    for (Map.Entry<Integer, Job> entry
-            : jobs.entrySet()) {
+                    Job job = entry.getValue();
 
-        Job job = entry.getValue();
+                    String marker = " ";
 
-                String marker = " ";
+                    if (job.jobNumber == maxJob) {
 
-if (job.jobNumber == maxJob) {
+                        marker = "+";
 
-    marker = "+";
+                    } else if (job.jobNumber == secondMaxJob) {
 
-}
+                        marker = "-";
+                    }
 
-else if (job.jobNumber
-        == secondMaxJob) {
+                    if (job.process.isAlive()) {
 
-    marker = "-";
-}
+                        System.out.printf("[%d]%s  %-24s%s%n", job.jobNumber, marker, "Running", job.command);
 
-        if (job.process.isAlive()) {
+                    } else {
 
-    System.out.printf(
-            "[%d]%s  %-24s%s%n",
-            job.jobNumber,
-            marker,
-            "Running",
-            job.command);
+                        String doneCommand = job.command;
 
-} else {
+                        if (doneCommand.endsWith("&")) {
 
-    String doneCommand =
-            job.command;
+                            doneCommand = doneCommand.substring(0, doneCommand.length() - 1).trim();
+                        }
 
-    if (doneCommand.endsWith("&")) {
+                        System.out.printf("[%d]%s  %-24s%s%n", job.jobNumber, marker, "Done", doneCommand);
+                    }
+                }
 
-        doneCommand =
-                doneCommand.substring(
-                        0,
-                        doneCommand.length() - 1)
-                        .trim();
-    }
+                List<Integer> removeJobs = new ArrayList<>();
 
-    System.out.printf(
-            "[%d]%s  %-24s%s%n",
-            job.jobNumber,
-            marker,
-            "Done",
-            doneCommand);
-}
-}
+                for (Map.Entry<Integer, Job> entry : jobs.entrySet()) {
 
-List<Integer> removeJobs =
-        new ArrayList<>();
+                    Job job = entry.getValue();
 
-for (Map.Entry<Integer, Job> entry
-        : jobs.entrySet()) {
+                    if (!job.process.isAlive()) {
 
-    Job job = entry.getValue();
+                        removeJobs.add(job.jobNumber);
+                    }
+                }
 
-    if (!job.process.isAlive()) {
+                for (Integer id : removeJobs) {
 
-        removeJobs.add(job.jobNumber);
-    }
-}
+                    jobs.remove(id);
+                }
 
-for (Integer id : removeJobs) {
-
-    jobs.remove(id);
-}
-
-continue;
-}
+                continue;
+            }
 
             // type builtin
-
-           
-
 
             if (command.equals("type")) {
 
@@ -482,9 +416,7 @@ continue;
                         || cmdToCheck.equals("cd")
                         || cmdToCheck.equals("jobs")) {
 
-                    System.out.println(
-                            cmdToCheck
-                                    + " is a shell builtin");
+                    System.out.println(cmdToCheck + " is a shell builtin");
 
                     continue;
                 }
@@ -495,21 +427,15 @@ continue;
 
                 if (pathEnv != null) {
 
-                    String[] directories =
-                            pathEnv.split(File.pathSeparator);
+                    String[] directories = pathEnv.split(File.pathSeparator);
 
                     for (String dir : directories) {
 
-                        Path fullPath =
-                                Paths.get(dir, cmdToCheck);
+                        Path fullPath = Paths.get(dir, cmdToCheck);
 
-                        if (Files.exists(fullPath)
-                                && Files.isExecutable(fullPath)) {
+                        if (Files.exists(fullPath) && Files.isExecutable(fullPath)) {
 
-                            System.out.println(
-                                    cmdToCheck
-                                            + " is "
-                                            + fullPath);
+                            System.out.println(cmdToCheck + " is " + fullPath);
 
                             found = true;
 
@@ -520,8 +446,7 @@ continue;
 
                 if (!found) {
 
-                    System.out.println(
-                            cmdToCheck + ": not found");
+                    System.out.println(cmdToCheck + ": not found");
                 }
 
                 continue;
@@ -535,19 +460,15 @@ continue;
 
             if (pathEnv != null) {
 
-                String[] directories =
-                        pathEnv.split(File.pathSeparator);
+                String[] directories = pathEnv.split(File.pathSeparator);
 
                 for (String dir : directories) {
 
-                    Path fullPath =
-                            Paths.get(dir, command);
+                    Path fullPath = Paths.get(dir, command);
 
-                    if (Files.exists(fullPath)
-                            && Files.isExecutable(fullPath)) {
+                    if (Files.exists(fullPath) && Files.isExecutable(fullPath)) {
 
-                        List<String> commandWithArgs =
-                                new ArrayList<>();
+                        List<String> commandWithArgs = new ArrayList<>();
 
                         commandWithArgs.add(command);
 
@@ -556,56 +477,39 @@ continue;
                             commandWithArgs.add(parts.get(i));
                         }
 
-                        ProcessBuilder pb =
-        new ProcessBuilder(commandWithArgs);
+                        ProcessBuilder pb = new ProcessBuilder(commandWithArgs);
 
-pb.directory(currentDirectory.toFile());
+                        pb.directory(currentDirectory.toFile());
 
+                        pb.inheritIO();
 
+                        Process process = pb.start();
 
-    pb.inheritIO();
+                        if (runInBackground) {
 
+                            int jobNumber = getNextJobNumber(jobs);
 
-Process process = pb.start();
+                            Job job = new Job(jobNumber, process.pid(), originalInput, process);
 
-if (runInBackground) {
+                            jobs.put(jobNumber, job);
 
-    int jobNumber =
-            getNextJobNumber(jobs);
+                            System.out.println("[" + jobNumber + "] " + process.pid());
 
-    Job job =
-            new Job(
-                    jobNumber,
-                    process.pid(),
-                    originalInput,
-                    process);
+                        } else {
 
-    jobs.put(
-            jobNumber,
-            job);
+                            process.waitFor();
+                        }
 
-    System.out.println(
-            "[" + jobNumber + "] "
-                    + process.pid());
+                        executed = true;
 
-}
-
-else {
-
-    process.waitFor();
-}
-
-executed = true;
-
-break;
+                        break;
                     }
                 }
             }
 
             if (!executed) {
 
-                System.out.println(
-                        command + ": command not found");
+                System.out.println(command + ": command not found");
             }
         }
 
