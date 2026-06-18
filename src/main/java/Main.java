@@ -13,7 +13,7 @@ public class Main {
 
         Scanner sc = new Scanner(System.in);
 
-        Path currentDirectory = Paths.get("").toAbsolutePath();
+        Path currentDirectory = Paths.get("").toAbsolutePath().normalize();
 
         while (true) {
 
@@ -46,12 +46,12 @@ public class Main {
             // pwd builtin
             if (command.equals("pwd")) {
 
-                System.out.println(currentDirectory.toString());
+                System.out.println(currentDirectory);
 
                 continue;
             }
 
-            // cd builtin (absolute paths only)
+            // cd builtin
             if (command.equals("cd")) {
 
                 if (parts.length < 2) {
@@ -60,11 +60,25 @@ public class Main {
 
                 String dir = parts[1];
 
-                Path newPath = Paths.get(dir);
+                Path newPath;
 
-                if (Files.exists(newPath) && Files.isDirectory(newPath)) {
+                // Absolute path
+                if (Paths.get(dir).isAbsolute()) {
 
-                    currentDirectory = newPath.toAbsolutePath().normalize();
+                    newPath = Paths.get(dir);
+
+                } else {
+
+                    // Relative path
+                    newPath = currentDirectory.resolve(dir);
+                }
+
+                newPath = newPath.normalize();
+
+                if (Files.exists(newPath)
+                        && Files.isDirectory(newPath)) {
+
+                    currentDirectory = newPath;
 
                 } else {
 
