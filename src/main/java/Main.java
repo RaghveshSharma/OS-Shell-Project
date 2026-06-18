@@ -299,6 +299,104 @@ public class Main {
 
             String command = parts.get(0);
 
+            // Dual command pipeline
+
+            if (input.contains("|")) {
+
+                String[] commands =
+                        input.split("\\|", 2);
+
+                List<String> leftCommand =
+                        parseCommand(
+                                commands[0].trim());
+
+                List<String> rightCommand =
+                        parseCommand(
+                                commands[1].trim());
+
+                boolean leftBuiltin =
+                        isBuiltin(
+                                leftCommand.get(0));
+
+                boolean rightBuiltin =
+                        isBuiltin(
+                                rightCommand.get(0));
+
+                byte[] leftOutput;
+
+                // LEFT SIDE
+
+                if (leftBuiltin) {
+
+                    String out =
+                            executeBuiltin(
+                                    leftCommand,
+                                    currentDirectory);
+
+                    leftOutput =
+                            out.getBytes();
+
+                }
+
+                else {
+
+                    ProcessBuilder pb =
+                            new ProcessBuilder(
+                                    leftCommand);
+
+                    pb.directory(
+                            currentDirectory.toFile());
+
+                    Process p =
+                            pb.start();
+
+                    leftOutput =
+                            p.getInputStream()
+                             .readAllBytes();
+
+                    p.waitFor();
+                }
+
+                // RIGHT SIDE
+
+                if (rightBuiltin) {
+
+                    String out =
+                            executeBuiltin(
+                                    rightCommand,
+                                    currentDirectory);
+
+                    System.out.print(out);
+
+                }
+
+                else {
+
+                    ProcessBuilder pb =
+                            new ProcessBuilder(
+                                    rightCommand);
+
+                    pb.directory(
+                            currentDirectory.toFile());
+
+                    Process p =
+                            pb.start();
+
+                    p.getOutputStream()
+                            .write(leftOutput);
+
+                    p.getOutputStream()
+                            .close();
+
+                    p.getInputStream()
+                            .transferTo(System.out);
+
+                    p.waitFor();
+                }
+
+                continue;
+            }
+
             // exit builtin
 
             if (command.equals("exit") || input.trim().equals("exit 0")) {
@@ -514,103 +612,7 @@ public class Main {
                 continue;
             }
 
-            // Dual command pipeline
 
-            if (input.contains("|")) {
-
-                String[] commands =
-                        input.split("\\|", 2);
-
-                List<String> leftCommand =
-                        parseCommand(
-                                commands[0].trim());
-
-                List<String> rightCommand =
-                        parseCommand(
-                                commands[1].trim());
-
-                boolean leftBuiltin =
-                        isBuiltin(
-                                leftCommand.get(0));
-
-                boolean rightBuiltin =
-                        isBuiltin(
-                                rightCommand.get(0));
-
-                byte[] leftOutput;
-
-                // LEFT SIDE
-
-                if (leftBuiltin) {
-
-                    String out =
-                            executeBuiltin(
-                                    leftCommand,
-                                    currentDirectory);
-
-                    leftOutput =
-                            out.getBytes();
-
-                }
-
-                else {
-
-                    ProcessBuilder pb =
-                            new ProcessBuilder(
-                                    leftCommand);
-
-                    pb.directory(
-                            currentDirectory.toFile());
-
-                    Process p =
-                            pb.start();
-
-                    leftOutput =
-                            p.getInputStream()
-                             .readAllBytes();
-
-                    p.waitFor();
-                }
-
-                // RIGHT SIDE
-
-                if (rightBuiltin) {
-
-                    String out =
-                            executeBuiltin(
-                                    rightCommand,
-                                    currentDirectory);
-
-                    System.out.print(out);
-
-                }
-
-                else {
-
-                    ProcessBuilder pb =
-                            new ProcessBuilder(
-                                    rightCommand);
-
-                    pb.directory(
-                            currentDirectory.toFile());
-
-                    Process p =
-                            pb.start();
-
-                    p.getOutputStream()
-                            .write(leftOutput);
-
-                    p.getOutputStream()
-                            .close();
-
-                    p.getInputStream()
-                            .transferTo(System.out);
-
-                    p.waitFor();
-                }
-
-                continue;
-            }
 
             // External commands
 
