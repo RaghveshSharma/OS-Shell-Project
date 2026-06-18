@@ -214,6 +214,19 @@ public class Main {
     }
 }
 
+    public static int getNextJobNumber(
+            Map<Integer, Job> jobs) {
+
+        int jobNumber = 1;
+
+        while (jobs.containsKey(jobNumber)) {
+
+            jobNumber++;
+        }
+
+        return jobNumber;
+    }
+
     public static void main(String[] args) throws Exception {
 
         Scanner sc = new Scanner(System.in);
@@ -221,7 +234,6 @@ public class Main {
         Path currentDirectory =
                 Paths.get("").toAbsolutePath().normalize();
         
-        int nextJobNumber = 1;
 
 Map<Integer, Job> jobs =
         new LinkedHashMap<>();
@@ -558,22 +570,23 @@ Process process = pb.start();
 
 if (runInBackground) {
 
+    int jobNumber =
+            getNextJobNumber(jobs);
+
     Job job =
-        new Job(
-                nextJobNumber,
-                process.pid(),
-                originalInput,
-                process);
+            new Job(
+                    jobNumber,
+                    process.pid(),
+                    originalInput,
+                    process);
 
     jobs.put(
-            nextJobNumber,
+            jobNumber,
             job);
 
     System.out.println(
-            "[" + nextJobNumber + "] "
+            "[" + jobNumber + "] "
                     + process.pid());
-
-    nextJobNumber++;
 
 }
 
