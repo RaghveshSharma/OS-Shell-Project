@@ -255,7 +255,23 @@ public class Main {
 
             boolean appendOutput = false;
 
-            if (input.contains("2>")) {
+            boolean appendError = false;
+
+            if (input.contains("2>>")) {
+
+                String[] temp =
+                        input.split("2>>", 2);
+
+                input =
+                        temp[0].trim();
+
+                errorFile =
+                        temp[1].trim();
+
+                appendError = true;
+            }
+
+            else if (input.contains("2>")) {
 
                 String[] temp =
                         input.split("2>", 2);
@@ -894,11 +910,29 @@ public class Main {
 
                         if (errorFile != null) {
 
-                            pb.redirectError(
+                            File errFile =
+                                    new File(errorFile);
 
-                                    new File(errorFile)
+                            if (appendError) {
 
-                            );
+                                pb.redirectError(
+
+                                        ProcessBuilder
+                                                .Redirect
+                                                .appendTo(errFile)
+
+                                );
+
+                            }
+
+                            else {
+
+                                pb.redirectError(
+
+                                        errFile
+
+                                );
+                            }
 
                         }
 
@@ -906,7 +940,9 @@ public class Main {
 
                             pb.redirectError(
 
-                                    ProcessBuilder.Redirect.INHERIT
+                                    ProcessBuilder
+                                            .Redirect
+                                            .INHERIT
 
                             );
                         }
