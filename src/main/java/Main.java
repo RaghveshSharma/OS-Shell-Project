@@ -117,6 +117,12 @@ public class Main {
         
         int nextJobNumber = 1;
 
+        long backgroundPid = -1;
+
+String backgroundCommand = "";
+
+boolean hasBackgroundJob = false;
+
         while (true) {
 
             System.out.print("$ ");
@@ -127,6 +133,8 @@ public class Main {
 
                 continue;
             }
+
+            String originalInput = input;
 
             List<String> parts = parseCommand(input);
 
@@ -241,12 +249,18 @@ String command = parts.get(0);
 
             // jobs builtin
 
-            if (command.equals("jobs")) {
+           if (command.equals("jobs")) {
 
-                // Empty implementation for this stage
+    if (hasBackgroundJob) {
 
-                continue;
-            }
+        System.out.printf(
+                "[1]+  %-24s%s%n",
+                "Running",
+                backgroundCommand);
+    }
+
+    continue;
+}
 
             // type builtin
 
@@ -354,13 +368,20 @@ Process process = pb.start();
 
 if (runInBackground) {
 
+    backgroundPid = process.pid();
+
+    backgroundCommand = originalInput;
+
+    hasBackgroundJob = true;
+
     System.out.println(
             "[" + nextJobNumber + "] "
-                    + process.pid());
+                    + backgroundPid);
 
     nextJobNumber++;
 
-} else {
+}
+else {
 
     process.waitFor();
 }
