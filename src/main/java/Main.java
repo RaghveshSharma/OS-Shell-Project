@@ -138,6 +138,82 @@ public class Main {
         return parts;
     }
 
+    public static void reapJobs(Map<Integer, Job> jobs) {
+
+    List<Integer> removeJobs =
+            new ArrayList<>();
+
+    int maxJob = -1;
+
+    int secondMaxJob = -1;
+
+    for (Integer id : jobs.keySet()) {
+
+        if (id > maxJob) {
+
+            secondMaxJob = maxJob;
+
+            maxJob = id;
+
+        }
+
+        else if (id > secondMaxJob) {
+
+            secondMaxJob = id;
+        }
+    }
+
+    for (Map.Entry<Integer, Job> entry
+            : jobs.entrySet()) {
+
+        Job job = entry.getValue();
+
+        if (!job.process.isAlive()) {
+
+            String marker = " ";
+
+            if (job.jobNumber == maxJob) {
+
+                marker = "+";
+
+            }
+
+            else if (job.jobNumber
+                    == secondMaxJob) {
+
+                marker = "-";
+            }
+
+            String doneCommand =
+                    job.command;
+
+            if (doneCommand.endsWith("&")) {
+
+                doneCommand =
+                        doneCommand.substring(
+                                0,
+                                doneCommand.length() - 1)
+                                .trim();
+            }
+
+            System.out.printf(
+                    "[%d]%s  %-24s%s%n",
+                    job.jobNumber,
+                    marker,
+                    "Done",
+                    doneCommand);
+
+            removeJobs.add(
+                    job.jobNumber);
+        }
+    }
+
+    for (Integer id : removeJobs) {
+
+        jobs.remove(id);
+    }
+}
+
     public static void main(String[] args) throws Exception {
 
         Scanner sc = new Scanner(System.in);
@@ -151,6 +227,8 @@ Map<Integer, Job> jobs =
         new LinkedHashMap<>();
 
         while (true) {
+
+            reapJobs(jobs);
 
             System.out.print("$ ");
 
@@ -278,8 +356,9 @@ String command = parts.get(0);
 
            if (command.equals("jobs")) {
 
-    List<Integer> removeJobs =
-            new ArrayList<>();
+            reapJobs(jobs);
+
+    
 
             int maxJob = -1;
 
@@ -322,48 +401,22 @@ else if (job.jobNumber
 
         if (job.process.isAlive()) {
 
-            System.out.printf(
-                    "[%d]%s  %-24s%s%n",
-                    job.jobNumber,
-                    marker,
-                    "Running",
-                    job.command);
+    System.out.printf(
+            "[%d]%s  %-24s%s%n",
+            job.jobNumber,
+            marker,
+            "Running",
+            job.command);
+}
+}
 
-        } else {
-
-            String doneCommand =
-                    job.command;
-
-            if (doneCommand.endsWith("&")) {
-
-                doneCommand =
-                        doneCommand.substring(
-                                0,
-                                doneCommand.length() - 1)
-                                .trim();
-            }
-
-            System.out.printf(
-                    "[%d]%s  %-24s%s%n",
-                    job.jobNumber,
-                    marker,
-                    "Done",
-                    doneCommand);
-
-            removeJobs.add(
-                    job.jobNumber);
-        }
-    }
-
-    for (Integer id : removeJobs) {
-
-        jobs.remove(id);
-    }
-
-    continue;
+continue;
 }
 
             // type builtin
+
+           
+
 
             if (command.equals("type")) {
 
