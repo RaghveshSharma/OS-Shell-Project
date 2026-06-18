@@ -474,12 +474,8 @@ public class Main {
 
                     if (p1.isAlive()) {
 
-                        p1.destroy();
+                        p1.destroyForcibly();
                     }
-
-                    pipeThread.join();
-
-                    outputThread.join();
 
                 }
 
