@@ -281,24 +281,44 @@ String command = parts.get(0);
     List<Integer> removeJobs =
             new ArrayList<>();
 
-    int totalJobs = jobs.size();
+            int maxJob = -1;
+
+int secondMaxJob = -1;
+
+for (Integer id : jobs.keySet()) {
+
+    if (id > maxJob) {
+
+        secondMaxJob = maxJob;
+
+        maxJob = id;
+
+    }
+
+    else if (id > secondMaxJob) {
+
+        secondMaxJob = id;
+    }
+}
 
     for (Map.Entry<Integer, Job> entry
             : jobs.entrySet()) {
 
         Job job = entry.getValue();
 
-        String marker = " ";
+                String marker = " ";
 
-        if (job.jobNumber == totalJobs) {
+if (job.jobNumber == maxJob) {
 
-            marker = "+";
+    marker = "+";
 
-        } else if (job.jobNumber
-                == totalJobs - 1) {
+}
 
-            marker = "-";
-        }
+else if (job.jobNumber
+        == secondMaxJob) {
+
+    marker = "-";
+}
 
         if (job.process.isAlive()) {
 
