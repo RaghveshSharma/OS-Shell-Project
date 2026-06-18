@@ -423,9 +423,14 @@ public class Main {
 
                                 try {
 
-                                    p1.getInputStream()
-                                            .transferTo(
-                                                    p2.getOutputStream());
+                                    java.io.InputStream in = p1.getInputStream();
+                                    java.io.OutputStream out = p2.getOutputStream();
+                                    byte[] buffer = new byte[1024];
+                                    int read;
+                                    while ((read = in.read(buffer)) != -1) {
+                                        out.write(buffer, 0, read);
+                                        out.flush();
+                                    }
 
                                 }
 
@@ -456,9 +461,14 @@ public class Main {
 
                                 try {
 
-                                    p2.getInputStream()
-                                            .transferTo(
-                                                    System.out);
+                                    java.io.InputStream in = p2.getInputStream();
+                                    java.io.OutputStream out = System.out;
+                                    byte[] buffer = new byte[1024];
+                                    int read;
+                                    while ((read = in.read(buffer)) != -1) {
+                                        out.write(buffer, 0, read);
+                                        out.flush();
+                                    }
 
                                 }
 
