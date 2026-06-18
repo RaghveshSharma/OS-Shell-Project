@@ -195,6 +195,37 @@ public class Main {
 
         return jobNumber;
     }
+
+    public static boolean isBuiltin(String cmd) {
+        return cmd.equals("echo") || cmd.equals("type") || cmd.equals("pwd") || cmd.equals("cd") || cmd.equals("jobs") || cmd.equals("exit");
+    }
+
+    public static String executeBuiltin(List<String> parts, Path currentDirectory) {
+        String command = parts.get(0);
+        StringBuilder output = new StringBuilder();
+        if (command.equals("echo")) {
+            for (int i = 1; i < parts.size(); i++) {
+                if (i > 1) {
+                    output.append(" ");
+                }
+                output.append(parts.get(i));
+            }
+            output.append("\n");
+        } else if (command.equals("pwd")) {
+            output.append(currentDirectory).append("\n");
+        } else if (command.equals("type")) {
+            if (parts.size() >= 2) {
+                String arg = parts.get(1);
+                if (isBuiltin(arg)) {
+                    output.append(arg).append(" is a shell builtin\n");
+                } else {
+                    output.append(arg).append(": not found\n");
+                }
+            }
+        }
+        return output.toString();
+    }
+
     public static void main(String[] args) throws Exception {
 
         Scanner sc = new Scanner(System.in);
@@ -257,14 +288,29 @@ public class Main {
                             parseCommand(
                                     commands[i].trim());
 
-                    ProcessBuilder pb =
-                            new ProcessBuilder(cmd);
+                    Process current;
+                    if (isBuiltin(cmd.get(0))) {
+                        String out = executeBuiltin(cmd, currentDirectory);
+                        current = new Process() {
+                            java.io.ByteArrayInputStream in = new java.io.ByteArrayInputStream(out.getBytes());
+                            public java.io.OutputStream getOutputStream() { return java.io.OutputStream.nullOutputStream(); }
+                            public java.io.InputStream getInputStream() { return in; }
+                            public java.io.InputStream getErrorStream() { return java.io.InputStream.nullInputStream(); }
+                            public int waitFor() { return 0; }
+                            public int exitValue() { return 0; }
+                            public void destroy() {}
+                            public boolean isAlive() { return false; }
+                        };
+                    } else {
+                        ProcessBuilder pb =
+                                new ProcessBuilder(cmd);
 
-                    pb.directory(
-                            currentDirectory.toFile());
+                        pb.directory(
+                                currentDirectory.toFile());
 
-                    Process current =
-                            pb.start();
+                        current =
+                                pb.start();
+                    }
 
                     processes.add(current);
 
