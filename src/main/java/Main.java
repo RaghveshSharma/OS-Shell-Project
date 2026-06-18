@@ -114,6 +114,8 @@ public class Main {
 
         Path currentDirectory =
                 Paths.get("").toAbsolutePath().normalize();
+        
+        int nextJobNumber = 1;
 
         while (true) {
 
@@ -128,7 +130,22 @@ public class Main {
 
             List<String> parts = parseCommand(input);
 
-            String command = parts.get(0);
+boolean runInBackground = false;
+
+if (!parts.isEmpty()
+        && parts.get(parts.size() - 1).equals("&")) {
+
+    runInBackground = true;
+
+    parts.remove(parts.size() - 1);
+}
+
+if (parts.isEmpty()) {
+
+    continue;
+}
+
+String command = parts.get(0);
 
             // exit builtin
 
@@ -324,19 +341,33 @@ public class Main {
                         }
 
                         ProcessBuilder pb =
-                                new ProcessBuilder(commandWithArgs);
+        new ProcessBuilder(commandWithArgs);
 
-                        pb.directory(currentDirectory.toFile());
+pb.directory(currentDirectory.toFile());
 
-                        pb.inheritIO();
+if (!runInBackground) {
 
-                        Process process = pb.start();
+    pb.inheritIO();
+}
 
-                        process.waitFor();
+Process process = pb.start();
 
-                        executed = true;
+if (runInBackground) {
 
-                        break;
+    System.out.println(
+            "[" + nextJobNumber + "] "
+                    + process.pid());
+
+    nextJobNumber++;
+
+} else {
+
+    process.waitFor();
+}
+
+executed = true;
+
+break;
                     }
                 }
             }
