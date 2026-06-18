@@ -15,15 +15,41 @@ public class Main {
         StringBuilder current = new StringBuilder();
 
         boolean inSingleQuotes = false;
-
         boolean inDoubleQuotes = false;
 
         for (int i = 0; i < input.length(); i++) {
 
             char ch = input.charAt(i);
 
-            // Backslash outside quotes
+            // Inside double quotes
+            if (inDoubleQuotes && ch == '\\') {
 
+                if (i + 1 < input.length()) {
+
+                    char next = input.charAt(i + 1);
+
+                    // Only these are escaped in this stage
+                    if (next == '"' || next == '\\') {
+
+                        current.append(next);
+
+                        i++;
+
+                        continue;
+                    }
+
+                    // Backslash is literal for all others
+                    current.append('\\');
+
+                    continue;
+                }
+
+                current.append('\\');
+
+                continue;
+            }
+
+            // Outside quotes: backslash escapes next char
             if (ch == '\\'
                     && !inSingleQuotes
                     && !inDoubleQuotes) {
@@ -39,8 +65,8 @@ public class Main {
             }
 
             // Single quotes
-
-            if (ch == '\'' && !inDoubleQuotes) {
+            if (ch == '\''
+                    && !inDoubleQuotes) {
 
                 inSingleQuotes = !inSingleQuotes;
 
@@ -48,8 +74,8 @@ public class Main {
             }
 
             // Double quotes
-
-            if (ch == '"' && !inSingleQuotes) {
+            if (ch == '"'
+                    && !inSingleQuotes) {
 
                 inDoubleQuotes = !inDoubleQuotes;
 
@@ -57,7 +83,6 @@ public class Main {
             }
 
             // Space outside quotes
-
             if (Character.isWhitespace(ch)
                     && !inSingleQuotes
                     && !inDoubleQuotes) {
@@ -309,7 +334,7 @@ public class Main {
             if (!executed) {
 
                 System.out.println(
-                        input + ": command not found");
+                        command + ": command not found");
             }
         }
 
