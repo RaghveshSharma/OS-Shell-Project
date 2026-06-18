@@ -62,14 +62,25 @@ public class Main {
 
                 Path newPath;
 
+                // Handle cd ~
+                if (dir.equals("~")) {
+
+                    String home = System.getenv("HOME");
+
+                    newPath = Paths.get(home);
+
+                }
+
                 // Absolute path
-                if (Paths.get(dir).isAbsolute()) {
+                else if (Paths.get(dir).isAbsolute()) {
 
                     newPath = Paths.get(dir);
 
-                } else {
+                }
 
-                    // Relative path
+                // Relative path
+                else {
+
                     newPath = currentDirectory.resolve(dir);
                 }
 
