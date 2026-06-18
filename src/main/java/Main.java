@@ -79,7 +79,7 @@ public class Main {
                     if (Files.exists(fullPath) && Files.isExecutable(fullPath)) {
                         // Prepare the execution arguments list
                         List<String> commandWithArgs = new ArrayList<>();
-                        commandWithArgs.add(fullPath.toString()); // Path to executable
+                        commandWithArgs.add(command); // Path to executable
                         commandWithArgs.addAll(Arrays.asList(parts).subList(1, parts.length)); // Remaining arguments
 
                         // Start the process and inherit its I/O streams so output displays automatically
