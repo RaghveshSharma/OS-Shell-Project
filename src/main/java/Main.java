@@ -487,6 +487,8 @@ public class Main {
                         p1.destroyForcibly();
                     }
 
+                    outputThread.join();
+
                 }
 
                 continue;
