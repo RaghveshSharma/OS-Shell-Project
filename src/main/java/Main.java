@@ -479,26 +479,64 @@ public class Main {
                 Process p2 = pb2.start();
 
                 Thread pipeThread =
-                        new Thread(
-                                () -> {
-                                    try {
+                        new Thread(() -> {
 
-                                        p1.getInputStream().transferTo(p2.getOutputStream());
+                            try {
 
-                                        p2.getOutputStream().close();
+                                p1.getInputStream()
+                                        .transferTo(
+                                                p2.getOutputStream());
 
-                                    } catch (Exception e) {
+                            }
 
-                                    }
-                                });
+                            catch (Exception e) {
+
+                            }
+
+                            finally {
+
+                                try {
+
+                                    p2.getOutputStream().close();
+
+                                }
+
+                                catch (Exception e) {
+
+                                }
+                            }
+                        });
 
                 pipeThread.start();
 
-                p2.getInputStream().transferTo(System.out);
+                Thread outputThread =
+                        new Thread(() -> {
 
-                p1.waitFor();
+                            try {
+
+                                p2.getInputStream()
+                                        .transferTo(System.out);
+
+                            }
+
+                            catch (Exception e) {
+
+                            }
+
+                        });
+
+                outputThread.start();
 
                 p2.waitFor();
+
+                pipeThread.join();
+
+                outputThread.join();
+
+                if (p1.isAlive()) {
+
+                    p1.destroy();
+                }
 
                 continue;
             }
