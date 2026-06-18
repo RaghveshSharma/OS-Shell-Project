@@ -30,12 +30,12 @@ public class Main {
                 break;
             }
 
-            // Split the input by spaces
+            // Split input into command + arguments
             String[] parts = input.split(" ");
 
             String command = parts[0];
 
-            // Handle echo builtin
+            // echo builtin
             if (command.equals("echo")) {
 
                 String message = input.substring(5);
@@ -45,7 +45,7 @@ public class Main {
                 continue;
             }
 
-            // Handle pwd builtin
+            // pwd builtin
             if (command.equals("pwd")) {
 
                 System.out.println(currentDirectory.toString());
@@ -53,7 +53,7 @@ public class Main {
                 continue;
             }
 
-            // Handle type builtin
+            // type builtin
             if (command.equals("type")) {
 
                 if (parts.length < 2) {
@@ -105,7 +105,7 @@ public class Main {
                 continue;
             }
 
-            // Handle external commands
+            // External commands
 
             String pathEnv = System.getenv("PATH");
 
@@ -124,9 +124,10 @@ public class Main {
 
                         List<String> commandWithArgs = new ArrayList<>();
 
-                        // Use full path of executable
-                        commandWithArgs.add(fullPath.toString());
+                        // argv[0] should be command name
+                        commandWithArgs.add(command);
 
+                        // Remaining arguments
                         commandWithArgs.addAll(
                                 Arrays.asList(parts)
                                         .subList(1, parts.length));
