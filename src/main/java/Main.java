@@ -249,6 +249,26 @@ public class Main {
 
             String originalInput = input;
 
+            String outputFile = null;
+
+            if (input.contains("1>")) {
+
+                String[] temp = input.split("1>", 2);
+
+                input = temp[0].trim();
+
+                outputFile = temp[1].trim();
+            }
+
+            else if (input.contains(">")) {
+
+                String[] temp = input.split(">", 2);
+
+                input = temp[0].trim();
+
+                outputFile = temp[1].trim();
+            }
+
             List<String> parts = parseCommand(input);
 
             boolean runInBackground = false;
@@ -447,17 +467,37 @@ public class Main {
 
             if (command.equals("echo")) {
 
+                StringBuilder out =
+                        new StringBuilder();
+
                 for (int i = 1; i < parts.size(); i++) {
 
                     if (i > 1) {
 
-                        System.out.print(" ");
+                        out.append(" ");
                     }
 
-                    System.out.print(parts.get(i));
+                    out.append(parts.get(i));
                 }
 
-                System.out.println();
+                out.append("\n");
+
+                if (outputFile != null) {
+
+                    Files.writeString(
+
+                            Paths.get(outputFile),
+
+                            out.toString()
+
+                    );
+
+                }
+
+                else {
+
+                    System.out.print(out);
+                }
 
                 continue;
             }
@@ -466,7 +506,27 @@ public class Main {
 
             if (command.equals("pwd")) {
 
-                System.out.println(currentDirectory);
+                String out =
+                        currentDirectory
+                                .toString()
+                                + "\n";
+
+                if (outputFile != null) {
+
+                    Files.writeString(
+
+                            Paths.get(outputFile),
+
+                            out
+
+                    );
+
+                }
+
+                else {
+
+                    System.out.print(out);
+                }
 
                 continue;
             }
@@ -608,6 +668,8 @@ public class Main {
 
                 String cmdToCheck = parts.get(1);
 
+                String result = "";
+
                 if (cmdToCheck.equals("echo")
                         || cmdToCheck.equals("exit")
                         || cmdToCheck.equals("type")
@@ -615,37 +677,63 @@ public class Main {
                         || cmdToCheck.equals("cd")
                         || cmdToCheck.equals("jobs")) {
 
-                    System.out.println(cmdToCheck + " is a shell builtin");
+                    result =
+                            cmdToCheck
+                                    + " is a shell builtin\n";
 
-                    continue;
-                }
+                } else {
 
-                String pathEnv = System.getenv("PATH");
+                    String pathEnv = System.getenv("PATH");
 
-                boolean found = false;
+                    boolean found = false;
 
-                if (pathEnv != null) {
+                    if (pathEnv != null) {
 
-                    String[] directories = pathEnv.split(File.pathSeparator);
+                        String[] directories = pathEnv.split(File.pathSeparator);
 
-                    for (String dir : directories) {
+                        for (String dir : directories) {
 
-                        Path fullPath = Paths.get(dir, cmdToCheck);
+                            Path fullPath = Paths.get(dir, cmdToCheck);
 
-                        if (Files.exists(fullPath) && Files.isExecutable(fullPath)) {
+                            if (Files.exists(fullPath) && Files.isExecutable(fullPath)) {
 
-                            System.out.println(cmdToCheck + " is " + fullPath);
+                                result =
+                                        cmdToCheck
+                                                + " is "
+                                                + fullPath
+                                                + "\n";
 
-                            found = true;
+                                found = true;
 
-                            break;
+                                break;
+                            }
                         }
                     }
+
+                    if (!found) {
+
+                        result =
+                                cmdToCheck
+                                        + ": not found\n";
+                    }
+
                 }
 
-                if (!found) {
+                if (outputFile != null) {
 
-                    System.out.println(cmdToCheck + ": not found");
+                    Files.writeString(
+
+                            Paths.get(outputFile),
+
+                            result
+
+                    );
+
+                }
+
+                else {
+
+                    System.out.print(result);
                 }
 
                 continue;
@@ -678,13 +766,31 @@ public class Main {
                             commandWithArgs.add(parts.get(i));
                         }
 
-                        ProcessBuilder pb = new ProcessBuilder(commandWithArgs);
+                        ProcessBuilder pb =
+                                new ProcessBuilder(commandWithArgs);
 
                         pb.directory(currentDirectory.toFile());
 
-                        pb.inheritIO();
+                        pb.redirectError(
+                                ProcessBuilder.Redirect.INHERIT);
 
-                        Process process = pb.start();
+                        if (outputFile != null) {
+
+                            pb.redirectOutput(
+
+                                    new File(outputFile)
+
+                            );
+
+                        }
+
+                        else {
+
+                            pb.inheritIO();
+                        }
+
+                        Process process =
+                                pb.start();
 
                         if (runInBackground) {
 
