@@ -282,6 +282,17 @@ public class Main {
 
             List<String> parts = parseCommand(input);
 
+            if (errorFile != null) {
+
+                File f =
+                        new File(errorFile);
+
+                if (!f.exists()) {
+
+                    f.createNewFile();
+                }
+            }
+
             boolean runInBackground = false;
 
             if (!parts.isEmpty() && parts.get(parts.size() - 1).equals("&")) {
