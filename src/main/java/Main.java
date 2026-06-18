@@ -195,128 +195,77 @@ public class Main {
 
         return jobNumber;
     }
-    static Path currentDirectory = Paths.get("").toAbsolutePath().normalize();
 
-    static Map<Integer, Job> jobs = new LinkedHashMap<>();
+    public static boolean isBuiltin(String cmd) {
 
-    public static boolean isBuiltin(String command) {
-        return command.equals("echo") || command.equals("exit") || command.equals("type")
-                || command.equals("pwd") || command.equals("cd") || command.equals("jobs");
+        return cmd.equals("echo")
+                || cmd.equals("type")
+                || cmd.equals("pwd")
+                || cmd.equals("cd")
+                || cmd.equals("jobs")
+                || cmd.equals("exit");
     }
 
-    public static void executeBuiltinForPipeline(List<String> parts, String originalInput, java.io.PrintStream out) {
+    public static String executeBuiltin(
+            List<String> parts,
+            Path currentDirectory) {
+
         String command = parts.get(0);
-        if (command.equals("exit") || originalInput.trim().equals("exit 0")) {
-            System.exit(0);
-        }
+
+        StringBuilder output =
+                new StringBuilder();
+
         if (command.equals("echo")) {
+
             for (int i = 1; i < parts.size(); i++) {
+
                 if (i > 1) {
-                    out.print(" ");
+
+                    output.append(" ");
                 }
-                out.print(parts.get(i));
+
+                output.append(parts.get(i));
             }
-            out.println();
-            return;
+
+            output.append("\n");
         }
-        if (command.equals("pwd")) {
-            out.println(currentDirectory);
-            return;
+
+        else if (command.equals("pwd")) {
+
+            output.append(currentDirectory)
+                    .append("\n");
         }
-        if (command.equals("cd")) {
-            if (parts.size() < 2) {
-                return;
-            }
-            String dir = parts.get(1);
-            Path newPath;
-            if (dir.equals("~")) {
-                newPath = Paths.get(System.getenv("HOME"));
-            } else if (Paths.get(dir).isAbsolute()) {
-                newPath = Paths.get(dir);
-            } else {
-                newPath = currentDirectory.resolve(dir);
-            }
-            newPath = newPath.normalize();
-            if (Files.exists(newPath) && Files.isDirectory(newPath)) {
-                currentDirectory = newPath;
-            } else {
-                out.println("cd: " + dir + ": No such file or directory");
-            }
-            return;
-        }
-        if (command.equals("jobs")) {
-            int maxJob = -1;
-            int secondMaxJob = -1;
-            for (Integer id : jobs.keySet()) {
-                if (id > maxJob) {
-                    secondMaxJob = maxJob;
-                    maxJob = id;
-                } else if (id > secondMaxJob) {
-                    secondMaxJob = id;
-                }
-            }
-            for (Map.Entry<Integer, Job> entry : jobs.entrySet()) {
-                Job job = entry.getValue();
-                String marker = " ";
-                if (job.jobNumber == maxJob) {
-                    marker = "+";
-                } else if (job.jobNumber == secondMaxJob) {
-                    marker = "-";
-                }
-                if (job.process.isAlive()) {
-                    out.printf("[%d]%s  %-24s%s%n", job.jobNumber, marker, "Running", job.command);
+
+        else if (command.equals("type")) {
+
+            if (parts.size() >= 2) {
+
+                String arg = parts.get(1);
+
+                if (isBuiltin(arg)) {
+
+                    output.append(arg)
+                            .append(" is a shell builtin\n");
+
                 } else {
-                    String doneCommand = job.command;
-                    if (doneCommand.endsWith("&")) {
-                        doneCommand = doneCommand.substring(0, doneCommand.length() - 1).trim();
-                    }
-                    out.printf("[%d]%s  %-24s%s%n", job.jobNumber, marker, "Done", doneCommand);
+
+                    output.append(arg)
+                            .append(": not found\n");
                 }
             }
-            List<Integer> removeJobs = new ArrayList<>();
-            for (Map.Entry<Integer, Job> entry : jobs.entrySet()) {
-                Job job = entry.getValue();
-                if (!job.process.isAlive()) {
-                    removeJobs.add(job.jobNumber);
-                }
-            }
-            for (Integer id : removeJobs) {
-                jobs.remove(id);
-            }
-            return;
         }
-        if (command.equals("type")) {
-            if (parts.size() < 2) {
-                return;
-            }
-            String cmdToCheck = parts.get(1);
-            if (isBuiltin(cmdToCheck)) {
-                out.println(cmdToCheck + " is a shell builtin");
-                return;
-            }
-            String pathEnv = System.getenv("PATH");
-            boolean found = false;
-            if (pathEnv != null) {
-                String[] directories = pathEnv.split(File.pathSeparator);
-                for (String dir : directories) {
-                    Path fullPath = Paths.get(dir, cmdToCheck);
-                    if (Files.exists(fullPath) && Files.isExecutable(fullPath)) {
-                        out.println(cmdToCheck + " is " + fullPath);
-                        found = true;
-                        break;
-                    }
-                }
-            }
-            if (!found) {
-                out.println(cmdToCheck + ": not found");
-            }
-            return;
-        }
+
+        return output.toString();
     }
 
     public static void main(String[] args) throws Exception {
 
         Scanner sc = new Scanner(System.in);
+
+        Path currentDirectory = Paths.get("").toAbsolutePath().normalize();
+
+        Map<Integer, Job> jobs = new LinkedHashMap<>();
+
         while (true) {
 
             reapJobs(jobs);
@@ -569,102 +518,95 @@ public class Main {
 
             if (input.contains("|")) {
 
-                String[] commands = input.split("\\|", 2);
+                String[] commands =
+                        input.split("\\|", 2);
 
-                List<String> leftCommand = parseCommand(commands[0].trim());
+                List<String> leftCommand =
+                        parseCommand(
+                                commands[0].trim());
 
-                List<String> rightCommand = parseCommand(commands[1].trim());
+                List<String> rightCommand =
+                        parseCommand(
+                                commands[1].trim());
 
-                boolean leftBuiltin = isBuiltin(leftCommand.get(0));
-                boolean rightBuiltin = isBuiltin(rightCommand.get(0));
+                boolean leftBuiltin =
+                        isBuiltin(
+                                leftCommand.get(0));
 
-                Process p1 = null;
-                Process p2 = null;
-                java.io.ByteArrayOutputStream leftBaos = null;
+                boolean rightBuiltin =
+                        isBuiltin(
+                                rightCommand.get(0));
+
+                byte[] leftOutput;
+
+                // LEFT SIDE
 
                 if (leftBuiltin) {
-                    leftBaos = new java.io.ByteArrayOutputStream();
-                    executeBuiltinForPipeline(leftCommand, commands[0].trim(), new java.io.PrintStream(leftBaos));
-                } else {
-                    ProcessBuilder pb1 = new ProcessBuilder(leftCommand);
-                    pb1.directory(currentDirectory.toFile());
-                    pb1.redirectError(ProcessBuilder.Redirect.INHERIT);
-                    p1 = pb1.start();
+
+                    String out =
+                            executeBuiltin(
+                                    leftCommand,
+                                    currentDirectory);
+
+                    leftOutput =
+                            out.getBytes();
+
                 }
 
-                if (!rightBuiltin) {
-                    ProcessBuilder pb2 = new ProcessBuilder(rightCommand);
-                    pb2.directory(currentDirectory.toFile());
-                    pb2.redirectError(ProcessBuilder.Redirect.INHERIT);
-                    p2 = pb2.start();
+                else {
+
+                    ProcessBuilder pb =
+                            new ProcessBuilder(
+                                    leftCommand);
+
+                    pb.directory(
+                            currentDirectory.toFile());
+
+                    Process p =
+                            pb.start();
+
+                    leftOutput =
+                            p.getInputStream()
+                             .readAllBytes();
+
+                    p.waitFor();
                 }
 
-                Thread pipeThread = null;
-
-                if (leftBuiltin && !rightBuiltin) {
-                    p2.getOutputStream().write(leftBaos.toByteArray());
-                    p2.getOutputStream().close();
-                } else if (!leftBuiltin && !rightBuiltin) {
-                    Process finalP1 = p1;
-                    Process finalP2 = p2;
-                    pipeThread = new Thread(() -> {
-                        try {
-                            java.io.InputStream in = finalP1.getInputStream();
-                            java.io.OutputStream out = finalP2.getOutputStream();
-                            byte[] buffer = new byte[1024];
-                            int read;
-                            while ((read = in.read(buffer)) != -1) {
-                                out.write(buffer, 0, read);
-                                out.flush();
-                            }
-                        } catch (Exception e) {}
-                        finally {
-                            try { finalP2.getOutputStream().close(); } catch (Exception e) {}
-                        }
-                    });
-                    pipeThread.start();
-                } else if (!leftBuiltin && rightBuiltin) {
-                    Process finalP1 = p1;
-                    Thread discardThread = new Thread(() -> {
-                        try {
-                            java.io.InputStream in = finalP1.getInputStream();
-                            byte[] buffer = new byte[1024];
-                            while (in.read(buffer) != -1) {}
-                        } catch (Exception e) {}
-                    });
-                    discardThread.start();
-                }
-
-                Thread outputThread = null;
+                // RIGHT SIDE
 
                 if (rightBuiltin) {
-                    executeBuiltinForPipeline(rightCommand, commands[1].trim(), System.out);
-                } else {
-                    Process finalP2 = p2;
-                    outputThread = new Thread(() -> {
-                        try {
-                            java.io.InputStream in = finalP2.getInputStream();
-                            java.io.OutputStream out = System.out;
-                            byte[] buffer = new byte[1024];
-                            int read;
-                            while ((read = in.read(buffer)) != -1) {
-                                out.write(buffer, 0, read);
-                                out.flush();
-                            }
-                        } catch (Exception e) {}
-                    });
-                    outputThread.start();
 
-                    p2.waitFor();
+                    String out =
+                            executeBuiltin(
+                                    rightCommand,
+                                    currentDirectory);
+
+                    System.out.print(out);
+
                 }
 
-                if (pipeThread != null) pipeThread.join();
-                if (outputThread != null) outputThread.join();
+                else {
 
-                if (!leftBuiltin) {
-                    if (p1.isAlive()) {
-                        p1.destroy();
-                    }
+                    ProcessBuilder pb =
+                            new ProcessBuilder(
+                                    rightCommand);
+
+                    pb.directory(
+                            currentDirectory.toFile());
+
+                    Process p =
+                            pb.start();
+
+                    p.getOutputStream()
+                            .write(leftOutput);
+
+                    p.getOutputStream()
+                            .close();
+
+                    p.getInputStream()
+                            .transferTo(System.out);
+
+                    p.waitFor();
                 }
 
                 continue;
