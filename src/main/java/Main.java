@@ -18,15 +18,21 @@ public class Main {
 
     String command;
 
-    Job(int jobNumber,
-        long pid,
-        String command) {
+    Process process;
+
+    Job(
+            int jobNumber,
+            long pid,
+            String command,
+            Process process) {
 
         this.jobNumber = jobNumber;
 
         this.pid = pid;
 
         this.command = command;
+
+        this.process = process;
     }
 }
 
@@ -272,6 +278,9 @@ String command = parts.get(0);
 
            if (command.equals("jobs")) {
 
+    List<Integer> removeJobs =
+            new ArrayList<>();
+
     int totalJobs = jobs.size();
 
     for (Map.Entry<Integer, Job> entry
@@ -291,12 +300,44 @@ String command = parts.get(0);
             marker = "-";
         }
 
-        System.out.printf(
-                "[%d]%s  %-24s%s%n",
-                job.jobNumber,
-                marker,
-                "Running",
-                job.command);
+        if (job.process.isAlive()) {
+
+            System.out.printf(
+                    "[%d]%s  %-24s%s%n",
+                    job.jobNumber,
+                    marker,
+                    "Running",
+                    job.command);
+
+        } else {
+
+            String doneCommand =
+                    job.command;
+
+            if (doneCommand.endsWith("&")) {
+
+                doneCommand =
+                        doneCommand.substring(
+                                0,
+                                doneCommand.length() - 1)
+                                .trim();
+            }
+
+            System.out.printf(
+                    "[%d]%s  %-24s%s%n",
+                    job.jobNumber,
+                    marker,
+                    "Done",
+                    doneCommand);
+
+            removeJobs.add(
+                    job.jobNumber);
+        }
+    }
+
+    for (Integer id : removeJobs) {
+
+        jobs.remove(id);
     }
 
     continue;
@@ -409,10 +450,11 @@ Process process = pb.start();
 if (runInBackground) {
 
     Job job =
-            new Job(
-                    nextJobNumber,
-                    process.pid(),
-                    originalInput);
+        new Job(
+                nextJobNumber,
+                process.pid(),
+                originalInput,
+                process);
 
     jobs.put(
             nextJobNumber,
