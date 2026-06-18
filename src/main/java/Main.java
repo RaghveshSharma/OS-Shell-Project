@@ -13,7 +13,6 @@ public class Main {
 
         Scanner sc = new Scanner(System.in);
 
-        // Current working directory
         Path currentDirectory = Paths.get("").toAbsolutePath();
 
         while (true) {
@@ -26,11 +25,10 @@ public class Main {
                 continue;
             }
 
-            if (input.equals("exit 0") || input.equals("exit")) {
+            if (input.equals("exit") || input.equals("exit 0")) {
                 break;
             }
 
-            // Split input into command + arguments
             String[] parts = input.split(" ");
 
             String command = parts[0];
@@ -53,6 +51,30 @@ public class Main {
                 continue;
             }
 
+            // cd builtin (absolute paths only)
+            if (command.equals("cd")) {
+
+                if (parts.length < 2) {
+                    continue;
+                }
+
+                String dir = parts[1];
+
+                Path newPath = Paths.get(dir);
+
+                if (Files.exists(newPath) && Files.isDirectory(newPath)) {
+
+                    currentDirectory = newPath.toAbsolutePath().normalize();
+
+                } else {
+
+                    System.out.println(
+                            "cd: " + dir + ": No such file or directory");
+                }
+
+                continue;
+            }
+
             // type builtin
             if (command.equals("type")) {
 
@@ -65,9 +87,11 @@ public class Main {
                 if (cmdToCheck.equals("echo")
                         || cmdToCheck.equals("exit")
                         || cmdToCheck.equals("type")
-                        || cmdToCheck.equals("pwd")) {
+                        || cmdToCheck.equals("pwd")
+                        || cmdToCheck.equals("cd")) {
 
-                    System.out.println(cmdToCheck + " is a shell builtin");
+                    System.out.println(
+                            cmdToCheck + " is a shell builtin");
 
                     continue;
                 }
@@ -78,17 +102,21 @@ public class Main {
 
                 if (pathEnv != null) {
 
-                    String[] directories = pathEnv.split(File.pathSeparator);
+                    String[] directories =
+                            pathEnv.split(File.pathSeparator);
 
                     for (String dir : directories) {
 
-                        Path fullPath = Paths.get(dir, cmdToCheck);
+                        Path fullPath =
+                                Paths.get(dir, cmdToCheck);
 
                         if (Files.exists(fullPath)
                                 && Files.isExecutable(fullPath)) {
 
                             System.out.println(
-                                    cmdToCheck + " is " + fullPath.toString());
+                                    cmdToCheck
+                                            + " is "
+                                            + fullPath.toString());
 
                             found = true;
 
@@ -99,7 +127,8 @@ public class Main {
 
                 if (!found) {
 
-                    System.out.println(cmdToCheck + ": not found");
+                    System.out.println(
+                            cmdToCheck + ": not found");
                 }
 
                 continue;
@@ -113,21 +142,22 @@ public class Main {
 
             if (pathEnv != null) {
 
-                String[] directories = pathEnv.split(File.pathSeparator);
+                String[] directories =
+                        pathEnv.split(File.pathSeparator);
 
                 for (String dir : directories) {
 
-                    Path fullPath = Paths.get(dir, command);
+                    Path fullPath =
+                            Paths.get(dir, command);
 
                     if (Files.exists(fullPath)
                             && Files.isExecutable(fullPath)) {
 
-                        List<String> commandWithArgs = new ArrayList<>();
+                        List<String> commandWithArgs =
+                                new ArrayList<>();
 
-                        // argv[0] should be command name
                         commandWithArgs.add(command);
 
-                        // Remaining arguments
                         commandWithArgs.addAll(
                                 Arrays.asList(parts)
                                         .subList(1, parts.length));
@@ -152,7 +182,8 @@ public class Main {
 
             if (!executed) {
 
-                System.out.println(input + ": command not found");
+                System.out.println(
+                        input + ": command not found");
             }
         }
 
