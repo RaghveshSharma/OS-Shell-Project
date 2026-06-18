@@ -322,76 +322,165 @@ public class Main {
                         isBuiltin(
                                 rightCommand.get(0));
 
-                byte[] leftOutput;
+                if (leftBuiltin || rightBuiltin) {
 
-                // LEFT SIDE
+                    byte[] leftOutput;
 
-                if (leftBuiltin) {
+                    // LEFT SIDE
 
-                    String out =
-                            executeBuiltin(
-                                    leftCommand,
-                                    currentDirectory);
+                    if (leftBuiltin) {
 
-                    leftOutput =
-                            out.getBytes();
+                        String out =
+                                executeBuiltin(
+                                        leftCommand,
+                                        currentDirectory);
 
-                }
+                        leftOutput =
+                                out.getBytes();
 
-                else {
+                    }
 
-                    ProcessBuilder pb =
+                    else {
+
+                        ProcessBuilder pb =
+                                new ProcessBuilder(
+                                        leftCommand);
+
+                        pb.directory(
+                                currentDirectory.toFile());
+
+                        Process p =
+                                pb.start();
+
+                        leftOutput =
+                                p.getInputStream()
+                                 .readAllBytes();
+
+                        p.waitFor();
+                    }
+
+                    // RIGHT SIDE
+
+                    if (rightBuiltin) {
+
+                        String out =
+                                executeBuiltin(
+                                        rightCommand,
+                                        currentDirectory);
+
+                        System.out.print(out);
+
+                    }
+
+                    else {
+
+                        ProcessBuilder pb =
+                                new ProcessBuilder(
+                                        rightCommand);
+
+                        pb.directory(
+                                currentDirectory.toFile());
+
+                        Process p =
+                                pb.start();
+
+                        p.getOutputStream()
+                                .write(leftOutput);
+
+                        p.getOutputStream()
+                                .close();
+
+                        p.getInputStream()
+                                .transferTo(System.out);
+
+                        p.waitFor();
+                    }
+
+                } else {
+
+                    ProcessBuilder pb1 =
                             new ProcessBuilder(
                                     leftCommand);
 
-                    pb.directory(
+                    pb1.directory(
                             currentDirectory.toFile());
 
-                    Process p =
-                            pb.start();
+                    Process p1 =
+                            pb1.start();
 
-                    leftOutput =
-                            p.getInputStream()
-                             .readAllBytes();
-
-                    p.waitFor();
-                }
-
-                // RIGHT SIDE
-
-                if (rightBuiltin) {
-
-                    String out =
-                            executeBuiltin(
-                                    rightCommand,
-                                    currentDirectory);
-
-                    System.out.print(out);
-
-                }
-
-                else {
-
-                    ProcessBuilder pb =
+                    ProcessBuilder pb2 =
                             new ProcessBuilder(
                                     rightCommand);
 
-                    pb.directory(
+                    pb2.directory(
                             currentDirectory.toFile());
 
-                    Process p =
-                            pb.start();
+                    Process p2 =
+                            pb2.start();
 
-                    p.getOutputStream()
-                            .write(leftOutput);
+                    Thread pipeThread =
+                            new Thread(() -> {
 
-                    p.getOutputStream()
-                            .close();
+                                try {
 
-                    p.getInputStream()
-                            .transferTo(System.out);
+                                    p1.getInputStream()
+                                            .transferTo(
+                                                    p2.getOutputStream());
 
-                    p.waitFor();
+                                }
+
+                                catch (Exception e) {
+
+                                }
+
+                                finally {
+
+                                    try {
+
+                                        p2.getOutputStream()
+                                                .close();
+
+                                    }
+
+                                    catch (Exception e) {
+
+                                    }
+                                }
+
+                            });
+
+                    pipeThread.start();
+
+                    Thread outputThread =
+                            new Thread(() -> {
+
+                                try {
+
+                                    p2.getInputStream()
+                                            .transferTo(
+                                                    System.out);
+
+                                }
+
+                                catch (Exception e) {
+
+                                }
+
+                            });
+
+                    outputThread.start();
+
+                    p2.waitFor();
+
+                    if (p1.isAlive()) {
+
+                        p1.destroy();
+                    }
+
+                    pipeThread.join();
+
+                    outputThread.join();
+
                 }
 
                 continue;
