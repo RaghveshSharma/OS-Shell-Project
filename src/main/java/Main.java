@@ -3,12 +3,36 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Main {
 
+    static class Job {
+
+    int jobNumber;
+
+    long pid;
+
+    String command;
+
+    Job(int jobNumber,
+        long pid,
+        String command) {
+
+        this.jobNumber = jobNumber;
+
+        this.pid = pid;
+
+        this.command = command;
+    }
+}
+
     public static List<String> parseCommand(String input) {
+
+        
 
         List<String> parts = new ArrayList<>();
 
@@ -117,11 +141,8 @@ public class Main {
         
         int nextJobNumber = 1;
 
-        long backgroundPid = -1;
-
-String backgroundCommand = "";
-
-boolean hasBackgroundJob = false;
+Map<Integer, Job> jobs =
+        new LinkedHashMap<>();
 
         while (true) {
 
@@ -251,12 +272,31 @@ String command = parts.get(0);
 
            if (command.equals("jobs")) {
 
-    if (hasBackgroundJob) {
+    int totalJobs = jobs.size();
+
+    for (Map.Entry<Integer, Job> entry
+            : jobs.entrySet()) {
+
+        Job job = entry.getValue();
+
+        String marker = " ";
+
+        if (job.jobNumber == totalJobs) {
+
+            marker = "+";
+
+        } else if (job.jobNumber
+                == totalJobs - 1) {
+
+            marker = "-";
+        }
 
         System.out.printf(
-                "[1]+  %-24s%s%n",
+                "[%d]%s  %-24s%s%n",
+                job.jobNumber,
+                marker,
                 "Running",
-                backgroundCommand);
+                job.command);
     }
 
     continue;
@@ -368,19 +408,24 @@ Process process = pb.start();
 
 if (runInBackground) {
 
-    backgroundPid = process.pid();
+    Job job =
+            new Job(
+                    nextJobNumber,
+                    process.pid(),
+                    originalInput);
 
-    backgroundCommand = originalInput;
-
-    hasBackgroundJob = true;
+    jobs.put(
+            nextJobNumber,
+            job);
 
     System.out.println(
             "[" + nextJobNumber + "] "
-                    + backgroundPid);
+                    + process.pid());
 
     nextJobNumber++;
 
 }
+
 else {
 
     process.waitFor();
