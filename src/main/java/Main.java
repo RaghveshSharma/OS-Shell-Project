@@ -16,18 +16,35 @@ public class Main {
 
         boolean inSingleQuotes = false;
 
+        boolean inDoubleQuotes = false;
+
         for (int i = 0; i < input.length(); i++) {
 
             char ch = input.charAt(i);
 
-            if (ch == '\'') {
+            // Single quotes
+
+            if (ch == '\'' && !inDoubleQuotes) {
 
                 inSingleQuotes = !inSingleQuotes;
 
                 continue;
             }
 
-            if (Character.isWhitespace(ch) && !inSingleQuotes) {
+            // Double quotes
+
+            if (ch == '"' && !inSingleQuotes) {
+
+                inDoubleQuotes = !inDoubleQuotes;
+
+                continue;
+            }
+
+            // Space outside quotes
+
+            if (Character.isWhitespace(ch)
+                    && !inSingleQuotes
+                    && !inDoubleQuotes) {
 
                 if (current.length() > 0) {
 
@@ -121,6 +138,8 @@ public class Main {
 
                 Path newPath;
 
+                // cd ~
+
                 if (dir.equals("~")) {
 
                     String home = System.getenv("HOME");
@@ -129,11 +148,15 @@ public class Main {
 
                 }
 
+                // Absolute path
+
                 else if (Paths.get(dir).isAbsolute()) {
 
                     newPath = Paths.get(dir);
 
                 }
+
+                // Relative path
 
                 else {
 
