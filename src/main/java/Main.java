@@ -195,69 +195,6 @@ public class Main {
 
         return jobNumber;
     }
-
-    public static boolean isBuiltin(String cmd) {
-
-        return cmd.equals("echo")
-                || cmd.equals("type")
-                || cmd.equals("pwd")
-                || cmd.equals("cd")
-                || cmd.equals("jobs")
-                || cmd.equals("exit");
-    }
-
-    public static String executeBuiltin(
-            List<String> parts,
-            Path currentDirectory) {
-
-        String command = parts.get(0);
-
-        StringBuilder output =
-                new StringBuilder();
-
-        if (command.equals("echo")) {
-
-            for (int i = 1; i < parts.size(); i++) {
-
-                if (i > 1) {
-
-                    output.append(" ");
-                }
-
-                output.append(parts.get(i));
-            }
-
-            output.append("\n");
-        }
-
-        else if (command.equals("pwd")) {
-
-            output.append(currentDirectory)
-                    .append("\n");
-        }
-
-        else if (command.equals("type")) {
-
-            if (parts.size() >= 2) {
-
-                String arg = parts.get(1);
-
-                if (isBuiltin(arg)) {
-
-                    output.append(arg)
-                            .append(" is a shell builtin\n");
-
-                } else {
-
-                    output.append(arg)
-                            .append(": not found\n");
-                }
-            }
-        }
-
-        return output.toString();
-    }
-
     public static void main(String[] args) throws Exception {
 
         Scanner sc = new Scanner(System.in);
@@ -299,197 +236,156 @@ public class Main {
 
             String command = parts.get(0);
 
-            // Dual command pipeline
+            // Multi-stage pipeline
 
             if (input.contains("|")) {
 
                 String[] commands =
-                        input.split("\\|", 2);
+                        input.split("\\|");
 
-                List<String> leftCommand =
-                        parseCommand(
-                                commands[0].trim());
+                List<Process> processes =
+                        new ArrayList<>();
 
-                List<String> rightCommand =
-                        parseCommand(
-                                commands[1].trim());
+                List<Thread> threads =
+                        new ArrayList<>();
 
-                boolean leftBuiltin =
-                        isBuiltin(
-                                leftCommand.get(0));
+                Process previous = null;
 
-                boolean rightBuiltin =
-                        isBuiltin(
-                                rightCommand.get(0));
+                for (int i = 0; i < commands.length; i++) {
 
-                if (leftBuiltin || rightBuiltin) {
+                    List<String> cmd =
+                            parseCommand(
+                                    commands[i].trim());
 
-                    byte[] leftOutput;
+                    ProcessBuilder pb =
+                            new ProcessBuilder(cmd);
 
-                    // LEFT SIDE
-
-                    if (leftBuiltin) {
-
-                        String out =
-                                executeBuiltin(
-                                        leftCommand,
-                                        currentDirectory);
-
-                        leftOutput =
-                                out.getBytes();
-
-                    }
-
-                    else {
-
-                        ProcessBuilder pb =
-                                new ProcessBuilder(
-                                        leftCommand);
-
-                        pb.directory(
-                                currentDirectory.toFile());
-
-                        Process p =
-                                pb.start();
-
-                        leftOutput =
-                                p.getInputStream()
-                                 .readAllBytes();
-
-                        p.waitFor();
-                    }
-
-                    // RIGHT SIDE
-
-                    if (rightBuiltin) {
-
-                        String out =
-                                executeBuiltin(
-                                        rightCommand,
-                                        currentDirectory);
-
-                        System.out.print(out);
-
-                    }
-
-                    else {
-
-                        ProcessBuilder pb =
-                                new ProcessBuilder(
-                                        rightCommand);
-
-                        pb.directory(
-                                currentDirectory.toFile());
-
-                        Process p =
-                                pb.start();
-
-                        p.getOutputStream()
-                                .write(leftOutput);
-
-                        p.getOutputStream()
-                                .close();
-
-                        p.getInputStream()
-                                .transferTo(System.out);
-
-                        p.waitFor();
-                    }
-
-                } else {
-
-                    ProcessBuilder pb1 =
-                            new ProcessBuilder(
-                                    leftCommand);
-
-                    pb1.directory(
+                    pb.directory(
                             currentDirectory.toFile());
 
-                    Process p1 =
-                            pb1.start();
+                    Process current =
+                            pb.start();
 
-                    ProcessBuilder pb2 =
-                            new ProcessBuilder(
-                                    rightCommand);
+                    processes.add(current);
 
-                    pb2.directory(
-                            currentDirectory.toFile());
+                    // connect previous stdout
+                    // to current stdin
 
-                    Process p2 =
-                            pb2.start();
+                    if (previous != null) {
 
-                    Thread pipeThread =
-                            new Thread(() -> {
+                        Process left = previous;
 
-                                try {
+                        Process right = current;
 
-                                    java.io.InputStream in = p1.getInputStream();
-                                    java.io.OutputStream out = p2.getOutputStream();
-                                    byte[] buffer = new byte[1024];
-                                    int read;
-                                    while ((read = in.read(buffer)) != -1) {
-                                        out.write(buffer, 0, read);
-                                        out.flush();
-                                    }
-
-                                }
-
-                                catch (Exception e) {
-
-                                }
-
-                                finally {
+                        Thread t =
+                                new Thread(() -> {
 
                                     try {
 
-                                        p2.getOutputStream()
-                                                .close();
+                                        byte[] buffer =
+                                                new byte[1024];
+
+                                        int read;
+
+                                        while ((read =
+                                                left.getInputStream()
+                                                        .read(buffer))
+                                                != -1) {
+
+                                            right.getOutputStream()
+                                                    .write(
+                                                            buffer,
+                                                            0,
+                                                            read);
+
+                                            right.getOutputStream()
+                                                    .flush();
+                                        }
 
                                     }
 
                                     catch (Exception e) {
 
                                     }
-                                }
 
-                            });
+                                    finally {
 
-                    pipeThread.start();
+                                        try {
 
-                    Thread outputThread =
-                            new Thread(() -> {
+                                            right.getOutputStream()
+                                                    .close();
 
-                                try {
+                                        }
 
-                                    java.io.InputStream in = p2.getInputStream();
-                                    java.io.OutputStream out = System.out;
-                                    byte[] buffer = new byte[1024];
-                                    int read;
-                                    while ((read = in.read(buffer)) != -1) {
-                                        out.write(buffer, 0, read);
-                                        out.flush();
+                                        catch (Exception e) {
+
+                                        }
                                     }
 
-                                }
+                                });
 
-                                catch (Exception e) {
+                        t.start();
 
-                                }
-
-                            });
-
-                    outputThread.start();
-
-                    p2.waitFor();
-
-                    if (p1.isAlive()) {
-
-                        p1.destroyForcibly();
+                        threads.add(t);
                     }
 
-                    outputThread.join();
-
+                    previous = current;
                 }
+
+                // last process output
+
+                Process last =
+                        processes.get(
+                                processes.size() - 1);
+
+                Thread outputThread =
+                        new Thread(() -> {
+
+                            try {
+
+                                byte[] buffer =
+                                        new byte[1024];
+
+                                int read;
+
+                                while ((read =
+                                        last.getInputStream()
+                                                .read(buffer))
+                                        != -1) {
+
+                                    System.out.write(
+                                            buffer,
+                                            0,
+                                            read);
+
+                                    System.out.flush();
+                                }
+
+                            }
+
+                            catch (Exception e) {
+
+                            }
+
+                        });
+
+                outputThread.start();
+
+                // wait for last
+
+                last.waitFor();
+
+                // destroy remaining alive processes
+
+                for (Process p : processes) {
+
+                    if (p.isAlive()) {
+
+                        p.destroyForcibly();
+                    }
+                }
+
+                outputThread.join();
 
                 continue;
             }

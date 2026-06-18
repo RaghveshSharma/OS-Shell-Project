@@ -1,0 +1,153 @@
+            // Multi-stage pipeline
+
+            if (input.contains("|")) {
+
+                String[] commands =
+                        input.split("\\|");
+
+                List<Process> processes =
+                        new ArrayList<>();
+
+                List<Thread> threads =
+                        new ArrayList<>();
+
+                Process previous = null;
+
+                for (int i = 0; i < commands.length; i++) {
+
+                    List<String> cmd =
+                            parseCommand(
+                                    commands[i].trim());
+
+                    ProcessBuilder pb =
+                            new ProcessBuilder(cmd);
+
+                    pb.directory(
+                            currentDirectory.toFile());
+
+                    Process current =
+                            pb.start();
+
+                    processes.add(current);
+
+                    // connect previous stdout
+                    // to current stdin
+
+                    if (previous != null) {
+
+                        Process left = previous;
+
+                        Process right = current;
+
+                        Thread t =
+                                new Thread(() -> {
+
+                                    try {
+
+                                        byte[] buffer =
+                                                new byte[1024];
+
+                                        int read;
+
+                                        while ((read =
+                                                left.getInputStream()
+                                                        .read(buffer))
+                                                != -1) {
+
+                                            right.getOutputStream()
+                                                    .write(
+                                                            buffer,
+                                                            0,
+                                                            read);
+
+                                            right.getOutputStream()
+                                                    .flush();
+                                        }
+
+                                    }
+
+                                    catch (Exception e) {
+
+                                    }
+
+                                    finally {
+
+                                        try {
+
+                                            right.getOutputStream()
+                                                    .close();
+
+                                        }
+
+                                        catch (Exception e) {
+
+                                        }
+                                    }
+
+                                });
+
+                        t.start();
+
+                        threads.add(t);
+                    }
+
+                    previous = current;
+                }
+
+                // last process output
+
+                Process last =
+                        processes.get(
+                                processes.size() - 1);
+
+                Thread outputThread =
+                        new Thread(() -> {
+
+                            try {
+
+                                byte[] buffer =
+                                        new byte[1024];
+
+                                int read;
+
+                                while ((read =
+                                        last.getInputStream()
+                                                .read(buffer))
+                                        != -1) {
+
+                                    System.out.write(
+                                            buffer,
+                                            0,
+                                            read);
+
+                                    System.out.flush();
+                                }
+
+                            }
+
+                            catch (Exception e) {
+
+                            }
+
+                        });
+
+                outputThread.start();
+
+                // wait for last
+
+                last.waitFor();
+
+                // destroy remaining alive processes
+
+                for (Process p : processes) {
+
+                    if (p.isAlive()) {
+
+                        p.destroyForcibly();
+                    }
+                }
+
+                outputThread.join();
+
+                continue;
+            }
