@@ -3,47 +3,104 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
 public class Main {
 
+    public static List<String> parseCommand(String input) {
+
+        List<String> parts = new ArrayList<>();
+
+        StringBuilder current = new StringBuilder();
+
+        boolean inSingleQuotes = false;
+
+        for (int i = 0; i < input.length(); i++) {
+
+            char ch = input.charAt(i);
+
+            if (ch == '\'') {
+
+                inSingleQuotes = !inSingleQuotes;
+
+                continue;
+            }
+
+            if (Character.isWhitespace(ch) && !inSingleQuotes) {
+
+                if (current.length() > 0) {
+
+                    parts.add(current.toString());
+
+                    current.setLength(0);
+                }
+
+            } else {
+
+                current.append(ch);
+            }
+        }
+
+        if (current.length() > 0) {
+
+            parts.add(current.toString());
+        }
+
+        return parts;
+    }
+
     public static void main(String[] args) throws Exception {
 
         Scanner sc = new Scanner(System.in);
 
-        Path currentDirectory = Paths.get("").toAbsolutePath().normalize();
+        Path currentDirectory =
+                Paths.get("").toAbsolutePath().normalize();
 
         while (true) {
 
             System.out.print("$ ");
 
-            String input = sc.nextLine().trim();
+            String input = sc.nextLine();
 
-            if (input.isEmpty()) {
+            if (input.trim().isEmpty()) {
+
                 continue;
             }
 
-            if (input.equals("exit") || input.equals("exit 0")) {
+            List<String> parts = parseCommand(input);
+
+            String command = parts.get(0);
+
+            // exit builtin
+
+            if (command.equals("exit")
+                    || input.trim().equals("exit 0")) {
+
                 break;
             }
 
-            String[] parts = input.split(" ");
-
-            String command = parts[0];
-
             // echo builtin
+
             if (command.equals("echo")) {
 
-                String message = input.substring(5);
+                for (int i = 1; i < parts.size(); i++) {
 
-                System.out.println(message);
+                    if (i > 1) {
+
+                        System.out.print(" ");
+                    }
+
+                    System.out.print(parts.get(i));
+                }
+
+                System.out.println();
 
                 continue;
             }
 
             // pwd builtin
+
             if (command.equals("pwd")) {
 
                 System.out.println(currentDirectory);
@@ -52,17 +109,18 @@ public class Main {
             }
 
             // cd builtin
+
             if (command.equals("cd")) {
 
-                if (parts.length < 2) {
+                if (parts.size() < 2) {
+
                     continue;
                 }
 
-                String dir = parts[1];
+                String dir = parts.get(1);
 
                 Path newPath;
 
-                // Handle cd ~
                 if (dir.equals("~")) {
 
                     String home = System.getenv("HOME");
@@ -71,14 +129,12 @@ public class Main {
 
                 }
 
-                // Absolute path
                 else if (Paths.get(dir).isAbsolute()) {
 
                     newPath = Paths.get(dir);
 
                 }
 
-                // Relative path
                 else {
 
                     newPath = currentDirectory.resolve(dir);
@@ -94,20 +150,24 @@ public class Main {
                 } else {
 
                     System.out.println(
-                            "cd: " + dir + ": No such file or directory");
+                            "cd: "
+                                    + dir
+                                    + ": No such file or directory");
                 }
 
                 continue;
             }
 
             // type builtin
+
             if (command.equals("type")) {
 
-                if (parts.length < 2) {
+                if (parts.size() < 2) {
+
                     continue;
                 }
 
-                String cmdToCheck = parts[1];
+                String cmdToCheck = parts.get(1);
 
                 if (cmdToCheck.equals("echo")
                         || cmdToCheck.equals("exit")
@@ -116,7 +176,8 @@ public class Main {
                         || cmdToCheck.equals("cd")) {
 
                     System.out.println(
-                            cmdToCheck + " is a shell builtin");
+                            cmdToCheck
+                                    + " is a shell builtin");
 
                     continue;
                 }
@@ -141,7 +202,7 @@ public class Main {
                             System.out.println(
                                     cmdToCheck
                                             + " is "
-                                            + fullPath.toString());
+                                            + fullPath);
 
                             found = true;
 
@@ -183,14 +244,20 @@ public class Main {
 
                         commandWithArgs.add(command);
 
-                        commandWithArgs.addAll(
-                                Arrays.asList(parts)
-                                        .subList(1, parts.length));
+                        for (int i = 1;
+                             i < parts.size();
+                             i++) {
+
+                            commandWithArgs.add(
+                                    parts.get(i));
+                        }
 
                         ProcessBuilder pb =
-                                new ProcessBuilder(commandWithArgs);
+                                new ProcessBuilder(
+                                        commandWithArgs);
 
-                        pb.directory(currentDirectory.toFile());
+                        pb.directory(
+                                currentDirectory.toFile());
 
                         pb.inheritIO();
 
@@ -208,7 +275,8 @@ public class Main {
             if (!executed) {
 
                 System.out.println(
-                        input + ": command not found");
+                        input
+                                + ": command not found");
             }
         }
 
