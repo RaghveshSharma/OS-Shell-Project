@@ -345,10 +345,10 @@ String command = parts.get(0);
 
 pb.directory(currentDirectory.toFile());
 
-if (!runInBackground) {
+
 
     pb.inheritIO();
-}
+
 
 Process process = pb.start();
 
