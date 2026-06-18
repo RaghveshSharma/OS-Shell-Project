@@ -10,6 +10,79 @@ public class Main {
 
     public static List<String> parseCommand(String input) {
 
+    List<String> parts = new ArrayList<>();
+
+    StringBuilder current = new StringBuilder();
+
+    boolean inSingleQuotes = false;
+
+    boolean inDoubleQuotes = false;
+
+    for (int i = 0; i < input.length(); i++) {
+
+        char ch = input.charAt(i);
+
+        // Backslash outside quotes
+
+        if (ch == '\\'
+                && !inSingleQuotes
+                && !inDoubleQuotes) {
+
+            if (i + 1 < input.length()) {
+
+                current.append(input.charAt(i + 1));
+
+                i++;
+            }
+
+            continue;
+        }
+
+        // Single quotes
+
+        if (ch == '\'' && !inDoubleQuotes) {
+
+            inSingleQuotes = !inSingleQuotes;
+
+            continue;
+        }
+
+        // Double quotes
+
+        if (ch == '"' && !inSingleQuotes) {
+
+            inDoubleQuotes = !inDoubleQuotes;
+
+            continue;
+        }
+
+        // Space outside quotes
+
+        if (Character.isWhitespace(ch)
+                && !inSingleQuotes
+                && !inDoubleQuotes) {
+
+            if (current.length() > 0) {
+
+                parts.add(current.toString());
+
+                current.setLength(0);
+            }
+
+        } else {
+
+            current.append(ch);
+        }
+    }
+
+    if (current.length() > 0) {
+
+        parts.add(current.toString());
+    }
+
+    return parts;
+}
+
         List<String> parts = new ArrayList<>();
 
         StringBuilder current = new StringBuilder();
